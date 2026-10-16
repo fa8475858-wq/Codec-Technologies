@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial EMI Calculator</title>
+  <style>
+    :root {
+      --bg: #0b1329;
+      --card-bg: #152238;
+      --card-inner: #0f1a2e;
+      --border: #233554;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent-interest: #f59e0b;
+      --success: #10b981;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      padding: 1.5rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.25rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Preset Buttons */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .preset-btn {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Main Grid */
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .calc-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-group {
+      margin-bottom: 1.4rem;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.45rem;
+    }
+
+    .label-row label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--primary);
+    }
+
+    .input-prefix, .input-suffix {
+      padding: 0 0.75rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.6rem 0.5rem;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Custom Sliders */
+    input[type="range"] {
+      width: 100%;
+      margin-top: 0.6rem;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Tenure Toggle */
+    .tenure-toggle {
+      display: flex;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .tenure-toggle button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tenure-toggle button.active {
+      background: var(--primary);
+      color: #0b1329;
+    }
+
+    /* Output Section */
+    .results-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.25rem;
+      text-align: center;
+    }
+
+    .emi-highlight {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .emi-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .emi-amount {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Chart and Legend */
+    .chart-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
+    }
+
+    .chart-svg {
+      transform: rotate(-90deg);
+      border-radius: 50%;
+    }
+
+    .chart-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      text-align: left;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .item-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .ind-principal { background-color: var(--primary); }
+    .ind-interest { background-color: var(--accent-interest); }
+
+    .item-value {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Ratio Progress Bar */
+    .ratio-bar {
+      height: 8px;
+      width: 100%;
+      background: var(--accent-interest);
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .ratio-fill-principal {
+      background: var(--primary);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Financial EMI Calculator</h1>
+      <p>Estimate your monthly installments, total interest, and complete loan amortization ratio.</p>
+    </header>
+
+    <!-- Preset Shortcuts -->
+    <div class="presets">
+      <button class="preset-btn" onclick="applyPreset(500000, 12, 3, 'years')">Personal: ₹5L @ 12% (3 Yrs)</button>
+      <button class="preset-btn" onclick="applyPreset(800000, 9, 5, 'years')">Car: ₹8L @ 9% (5 Yrs)</button>
+      <button class="preset-btn" onclick="applyPreset(3000000, 8.5, 20, 'years')">Home: ₹30L @ 8.5% (20 Yrs)</button>
+    </div>
+
+    <div class="calc-grid">
+      <!-- Input Form Card -->
+      <section class="card">
+        <!-- Loan Amount -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="amount-input">Loan Amount</label>
+            <span id="amount-text" style="font-weight: 600; color: var(--primary);">₹ 5,00,000</span>
+          </div>
+          <div class="input-wrap">
+            <span class="input-prefix">₹</span>
+            <input type="number" id="amount-input" min="10000" max="10000000" step="10000" value="500000">
+          </div>
+          <input type="range" id="amount-slider" min="50000" max="10000000" step="10000" value="500000">
+        </div>
+
+        <!-- Interest Rate -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="rate-input">Interest Rate (p.a.)</label>
+            <span id="rate-text" style="font-weight: 600; color: var(--primary);">12.0 %</span>
+          </div>
+          <div class="input-wrap">
+            <input type="number" id="rate-input" min="1" max="30" step="0.1" value="12">
+            <span class="input-suffix">%</span>
+          </div>
+          <input type="range" id="rate-slider" min="1" max="25" step="0.1" value="12">
+        </div>
+
+        <!-- Loan Tenure -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="tenure-input">Loan Tenure</label>
+            <div class="tenure-toggle">
+              <button id="toggle-yr" class="active" type="button" onclick="setTenureMode('years')">Yr</button>
+              <button id="toggle-mo" type="button" onclick="setTenureMode('months')">Mo</button>
+            </div>
+          </div>
+          <div class="input-wrap">
+            <input type="number" id="tenure-input" min="1" max="30" step="1" value="3">
+            <span id="tenure-suffix" class="input-suffix">Years</span>
+          </div>
+          <input type="range" id="tenure-slider" min="1" max="30" step="1" value="3">
+        </div>
+      </section>
+
+      <!-- Outputs & Breakdown -->
+      <section class="card results-card">
+        <div class="emi-highlight">
+          <div class="emi-title">Monthly Loan EMI</div>
+          <div class="emi-amount" id="emi-val">₹ 0</div>
+        </div>
+
+        <!-- Donut Visual Breakdown -->
+        <div class="chart-container">
+          <svg class="chart-svg" width="150" height="150" viewBox="0 0 100 100">
+            <!-- Background circle (Interest) -->
+            <circle cx="50" cy="50" r="40" stroke="var(--accent-interest)" stroke-width="14" fill="transparent"/>
+            <!-- Foreground circle (Principal) -->
+            <circle id="donut-principal" cx="50" cy="50" r="40" stroke="var(--primary)" stroke-width="14" 
+                    stroke-dasharray="251.2" stroke-dashoffset="0" fill="transparent"
+                    style="transition: stroke-dashoffset 0.3s ease;"/>
+          </svg>
+          <div class="chart-center-text" id="principal-ratio-text">0% P</div>
+        </div>
+
+        <!-- Horizontal Ratio Bar -->
+        <div>
+          <div class="ratio-bar">
+            <div class="ratio-fill-principal" id="ratio-bar-fill" style="width: 50%;"></div>
+          </div>
+        </div>
+
+        <!-- Detailed Sums -->
+        <div class="breakdown-list">
+          <div class="breakdown-item">
+            <span class="item-label">
+              <span class="indicator ind-principal"></span>
+              Principal Amount
+            </span>
+            <span class="item-value" id="res-principal">₹ 0</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="item-label">
+              <span class="indicator ind-interest"></span>
+              Total Interest
+            </span>
+            <span class="item-value" id="res-interest" style="color: var(--accent-interest);">₹ 0</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="item-label" style="font-weight: 600; color: var(--text);">Total Amount Payable</span>
+            <span class="item-value" id="res-total">₹ 0</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // State variables
+    let tenureMode = 'years'; // 'years' | 'months'
+
+    // DOM Elements
+    const amountInput = document.getElementById('amount-input');
+    const amountSlider = document.getElementById('amount-slider');
+    const amountText = document.getElementById('amount-text');
+
+    const rateInput = document.getElementById('rate-input');
+    const rateSlider = document.getElementById('rate-slider');
+    const rateText = document.getElementById('rate-text');
+
+    const tenureInput = document.getElementById('tenure-input');
+    const tenureSlider = document.getElementById('tenure-slider');
+    const tenureSuffix = document.getElementById('tenure-suffix');
+
+    const toggleYr = document.getElementById('toggle-yr');
+    const toggleMo = document.getElementById('toggle-mo');
+
+    const emiDisplay = document.getElementById('emi-val');
+    const resPrincipal = document.getElementById('res-principal');
+    const resInterest = document.getElementById('res-interest');
+    const resTotal = document.getElementById('res-total');
+    const donutPrincipal = document.getElementById('donut-principal');
+    const ratioBarFill = document.getElementById('ratio-bar-fill');
+    const ratioText = document.getElementById('principal-ratio-text');
+
+    // Indian Currency Number Formatter
+    function formatINR(val) {
+      if (isNaN(val)) return '₹ 0';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(Math.round(val));
+    }
+
+    // Two-way synchronization helper
+    function sync(input, slider, callback) {
+      input.addEventListener('input', () => {
+        slider.value = input.value;
+        callback();
+      });
+      slider.addEventListener('input', () => {
+        input.value = slider.value;
+        callback();
+      });
+    }
+
+    sync(amountInput, amountSlider, calculateEMI);
+    sync(rateInput, rateSlider, calculateEMI);
+    sync(tenureInput, tenureSlider, calculateEMI);
+
+    // Switch between Years and Months
+    function setTenureMode(mode) {
+      if (tenureMode === mode) return;
+      tenureMode = mode;
+
+      if (mode === 'years') {
+        toggleYr.classList.add('active');
+        toggleMo.classList.remove('active');
+        tenureSuffix.textContent = 'Years';
+
+        tenureInput.max = 30;
+        tenureSlider.max = 30;
+        tenureInput.value = Math.max(1, Math.round(tenureInput.value / 12));
+        tenureSlider.value = tenureInput.value;
+      } else {
+        toggleMo.classList.add('active');
+        toggleYr.classList.remove('active');
+        tenureSuffix.textContent = 'Months';
+
+        tenureInput.max = 360;
+        tenureSlider.max = 360;
+        tenureInput.value = Math.min(360, tenureInput.value * 12);
+        tenureSlider.value = tenureInput.value;
+      }
+
+      calculateEMI();
+    }
+
+    // Preset Applicator
+    function applyPreset(principal, rate, tenure, mode) {
+      setTenureMode(mode);
+      amountInput.value = principal;
+      amountSlider.value = principal;
+      rateInput.value = rate;
+      rateSlider.value = rate;
+      tenureInput.value = tenure;
+      tenureSlider.value = tenure;
+      calculateEMI();
+    }
+
+    // Main EMI Calculation Engine
+    function calculateEMI() {
+      const P = parseFloat(amountInput.value) || 0;
+      const annualRate = parseFloat(rateInput.value) || 0;
+      const tenureVal = parseFloat(tenureInput.value) || 0;
+
+      // Update header labels
+      amountText.textContent = formatINR(P);
+      rateText.textContent = annualRate.toFixed(1) + ' %';
+
+      // N = Total Months
+      const N = tenureMode === 'years' ? tenureVal * 12 : tenureVal;
+
+      // R = Monthly Interest Rate
+      const R = (annualRate / 12) / 100;
+
+      let emi = 0;
+      let totalAmount = 0;
+      let totalInterest = 0;
+
+      if (P > 0 && N > 0) {
+        if (R === 0) {
+          emi = P / N;
+          totalAmount = P;
+          totalInterest = 0;
+        } else {
+          // Standard Reducing Balance EMI Formula:
+          // EMI = [P * R * (1+R)^N] / [(1+R)^N - 1]
+          const factor = Math.pow(1 + R, N);
+          emi = (P * R * factor) / (factor - 1);
+          totalAmount = emi * N;
+          totalInterest = totalAmount - P;
+        }
+      }
+
+      // Update Output Numbers
+      emiDisplay.textContent = formatINR(emi);
+      resPrincipal.textContent = formatINR(P);
+      resInterest.textContent = formatINR(totalInterest);
+      resTotal.textContent = formatINR(totalAmount);
+
+      // Visual Breakdown (Donut + Progress Bar)
+      const circumference = 2 * Math.PI * 40; // ~251.2
+      const principalRatio = totalAmount > 0 ? (P / totalAmount) : 1;
+      const offset = circumference * (1 - principalRatio);
+
+      donutPrincipal.style.strokeDashoffset = isNaN(offset) ? 0 : offset;
+      ratioBarFill.style.width = `${(principalRatio * 100).toFixed(1)}%`;
+      ratioText.textContent = `${(principalRatio * 100).toFixed(0)}% P`;
+    }
+
+    // Initial run
+    calculateEMI();
+  </script>
+</body>
+</html>
