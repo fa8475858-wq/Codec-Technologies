@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Planner & Focus Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent-hover: #388bfd;
+      --text: #c9d1d9;
+      --heading: #f0f6fc;
+      --danger: #f85149;
+      --warning: #d29922;
+      --success: #3fb950;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 { color: var(--heading); font-size: 1.75rem; }
+    header p { color: #8b949e; font-size: 0.9rem; }
+
+    /* Dashboard Layout */
+    .dashboard {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 860px) {
+      .dashboard { grid-template-columns: 320px 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      color: var(--heading);
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    /* Pomodoro Section */
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: 3rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 1rem 0;
+      color: var(--heading);
+    }
+    .timer-modes, .timer-controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    button {
+      background: #21262d;
+      color: var(--heading);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.85rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover { background: #30363d; border-color: #8b949e; }
+    button.primary { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+    button.primary:hover { background: var(--accent-hover); }
+    button.active-mode { background: #388bfd33; border-color: var(--accent); color: var(--accent); }
+
+    /* Form */
+    form { display: flex; flex-direction: column; gap: 0.75rem; }
+    label { font-size: 0.8rem; color: #8b949e; font-weight: 600; }
+    input, select {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      color: var(--heading);
+      border-radius: 6px;
+      padding: 0.5rem;
+      font-size: 0.85rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Task Feed */
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .task-item {
+      background: #1c2128;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    @media (min-width: 580px) {
+      .task-item {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+    .task-info { flex: 1; }
+    .task-meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .tag {
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .tag-subject { background: #388bfd26; color: var(--accent); }
+    .tag-high { background: #f8514926; color: var(--danger); }
+    .tag-med { background: #d2992226; color: var(--warning); }
+    .tag-low { background: #3fb95026; color: var(--success); }
+    .task-title {
+      font-weight: 600;
+      color: var(--heading);
+      font-size: 0.95rem;
+    }
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: #8b949e;
+    }
+
+    /* Countdown Tag */
+    .countdown {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: inline-block;
+    }
+    .countdown.urgent { color: var(--danger); border-color: var(--danger); font-weight: 700; }
+    .countdown.overdue { color: #8b949e; border-color: var(--border); }
+
+    .task-actions {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .task-actions button { padding: 0.35rem 0.6rem; font-size: 0.75rem; }
+    .btn-del:hover { color: var(--danger); border-color: var(--danger); }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #8b949e;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Academic Planner &amp; Task Command</h1>
+    <p>Track modules, manage deadlines, and focus with Pomodoro cycles.</p>
+  </header>
+
+  <main class="dashboard">
+    <!-- Left Column: Focus & Add Task -->
+    <aside style="display:flex; flex-direction:column; gap:1.5rem;">
+      <!-- Pomodoro Card -->
+      <section class="card">
+        <h2>Focus Timer</h2>
+        <div class="timer-modes">
+          <button id="mode-25" class="active-mode" onclick="setTimerMode(25)">25m Work</button>
+          <button id="mode-5" onclick="setTimerMode(5)">5m Break</button>
+        </div>
+        <div class="timer-display" id="timer-display">25:00</div>
+        <div class="timer-controls">
+          <button id="timer-toggle-btn" class="primary" onclick="toggleTimer()">Start</button>
+          <button onclick="resetTimer()">Reset</button>
+        </div>
+      </section>
+
+      <!-- Add Coursework Form -->
+      <section class="card">
+        <h2>Add Coursework</h2>
+        <form id="task-form" onsubmit="handleAddTask(event)">
+          <div>
+            <label for="task-subject">Subject</label>
+            <input type="text" id="task-subject" placeholder="e.g. DSA, OS, DBMS" required>
+          </div>
+          <div>
+            <label for="task-title">Title</label>
+            <input type="text" id="task-title" placeholder="Assignment or Lab details" required>
+          </div>
+          <div>
+            <label for="task-deadline">Deadline</label>
+            <input type="datetime-local" id="task-deadline" required>
+          </div>
+          <div>
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <button type="submit" class="primary" style="margin-top:0.5rem;">Save Task</button>
+        </form>
+      </section>
+    </aside>
+
+    <!-- Right Column: Coursework Feed -->
+    <section class="card">
+      <div class="tasks-header">
+        <h2>Coursework Deadlines</h2>
+        <span id="task-counter" style="font-size:0.8rem; color:#8b949e;">0 tasks</span>
+      </div>
+      <div id="tasks-container" class="task-list"></div>
+    </section>
+  </main>
+
+  <script>
+    // State & LocalStorage Keys
+    const STORAGE_KEY = 'academic_planner_tasks';
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+      {
+        id: '1',
+        subject: 'DSA',
+        title: 'Binary Search Tree & Red-Black Balancing Lab',
+        deadline: new Date(Date.now() + 20 * 3600 * 1000).toISOString(),
+        priority: 'High',
+        completed: false
+      },
+      {
+        id: '2',
+        subject: 'OS',
+        title: 'CPU Scheduling Simulation (Round Robin & SJF)',
+        deadline: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+        priority: 'Medium',
+        completed: false
+      }
+    ];
+
+    /* --- Pomodoro Engine --- */
+    let timerMinutes = 25;
+    let timerSecondsLeft = 25 * 60;
+    let timerInterval = null;
+    let isRunning = false;
+
+    function setTimerMode(mins) {
+      clearInterval(timerInterval);
+      isRunning = false;
+      timerMinutes = mins;
+      timerSecondsLeft = mins * 60;
+      document.getElementById('timer-toggle-btn').innerText = 'Start';
+      document.getElementById('mode-25').classList.toggle('active-mode', mins === 25);
+      document.getElementById('mode-5').classList.toggle('active-mode', mins === 5);
+      updateTimerDisplay();
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        document.getElementById('timer-toggle-btn').innerText = 'Resume';
+      } else {
+        isRunning = true;
+        document.getElementById('timer-toggle-btn').innerText = 'Pause';
+        timerInterval = setInterval(() => {
+          if (timerSecondsLeft > 0) {
+            timerSecondsLeft--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('timer-toggle-btn').innerText = 'Start';
+            alert('Timer ended! Take a break or start your next session.');
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      timerSecondsLeft = timerMinutes * 60;
+      document.getElementById('timer-toggle-btn').innerText = 'Start';
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timerSecondsLeft / 60).toString().padStart(2, '0');
+      const s = (timerSecondsLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer-display').innerText = `${m}:${s}`;
+    }
+
+    /* --- Task Management --- */
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function handleAddTask(e) {
+      e.preventDefault();
+      const subject = document.getElementById('task-subject').value.trim();
+      const title = document.getElementById('task-title').value.trim();
+      const deadline = new Date(document.getElementById('task-deadline').value).toISOString();
+      const priority = document.getElementById('task-priority').value;
+
+      tasks.push({
+        id: Date.now().toString(),
+        subject,
+        title,
+        deadline,
+        priority,
+        completed: false
+      });
+
+      e.target.reset();
+      saveTasks();
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      saveTasks();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks();
+    }
+
+    /* --- Countdown Calculation --- */
+    function getRemaining(deadlineISO) {
+      const diff = new Date(deadlineISO).getTime() - Date.now();
+      if (diff <= 0) return { text: 'Overdue', isUrgent: false, isOverdue: true };
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / (1000 * 60)) % 60);
+      const secs = Math.floor((diff / 1000) % 60);
+
+      const isUrgent = diff < 24 * 3600 * 1000;
+      const text = `${days}d ${hours}h ${mins}m ${secs}s`;
+      return { text, isUrgent, isOverdue: false };
+    }
+
+    /* --- Render UI --- */
+    function renderTasks() {
+      const container = document.getElementById('tasks-container');
+      const counter = document.getElementById('task-counter');
+      counter.innerText = `${tasks.length} task${tasks.length === 1 ? '' : 's'}`;
+
+      if (tasks.length === 0) {
+        container.innerHTML = `<div class="empty-state">No coursework scheduled. Add a task to begin tracking deadlines.</div>`;
+        return;
+      }
+
+      // Sort: uncompleted first, then nearest deadline
+      const sorted = [...tasks].sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        return new Date(a.deadline) - new Date(b.deadline);
+      });
+
+      container.innerHTML = sorted.map(t => {
+        const time = getRemaining(t.deadline);
+        const tagPriority = t.priority === 'High' ? 'tag-high' : (t.priority === 'Medium' ? 'tag-med' : 'tag-low');
+        const countdownClass = t.completed ? '' : (time.isOverdue ? 'overdue' : (time.isUrgent ? 'urgent' : ''));
+
+        return `
+          <div class="task-item ${t.completed ? 'completed' : ''}">
+            <div class="task-info">
+              <div class="task-meta">
+                <span class="tag tag-subject">${escapeHtml(t.subject)}</span>
+                <span class="tag ${tagPriority}">${t.priority}</span>
+              </div>
+              <div class="task-title">${escapeHtml(t.title)}</div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+              <span class="countdown ${countdownClass}">${t.completed ? 'Done' : time.text}</span>
+              <div class="task-actions">
+                <button onclick="toggleTask('${t.id}')">${t.completed ? 'Undo' : 'Complete'}</button>
+                <button class="btn-del" onclick="deleteTask('${t.id}')">Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[match]));
+    }
+
+    // Initialize default datetime picker (tomorrow at 23:59)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 0, 0);
+    document.getElementById('task-deadline').value = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+    // Initial render and live ticker
+    renderTasks();
+    setInterval(renderTasks, 1000);
+  </script>
+</body>
+</html>
